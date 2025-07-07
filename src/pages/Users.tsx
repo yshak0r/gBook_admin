@@ -2,45 +2,39 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useUsers, useDeactivateUser, useActivateUser } from "@/hooks/useUsers";
 import {
+  Box,
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
+  Typography,
+  Grid,
+  TextField,
+  MenuItem,
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
-  TableHeader,
   TableRow,
-} from "@/components/ui/table";
+  Paper,
+  Avatar,
+  Chip,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
+  CircularProgress,
+  InputAdornment,
+} from '@mui/material';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Search, Eye, UserX, UserCheck } from "lucide-react";
-import { toast } from "sonner";
+  Search as SearchIcon,
+  Visibility as EyeIcon,
+  PersonOff as UserXIcon,
+  PersonAdd as UserCheckIcon,
+} from '@mui/icons-material';
+import { useSnackbar } from "@/hooks/useSnackbar";
 import { User } from "@/types";
 
 export default function Users() {
@@ -51,15 +45,21 @@ export default function Users() {
     role: "",
     status: "",
   });
+  const [deactivateDialog, setDeactivateDialog] = useState<{ open: boolean; user: User | null }>({
+    open: false,
+    user: null,
+  });
 
   const { data, isLoading } = useUsers(filters);
   const deactivateUser = useDeactivateUser();
   const activateUser = useActivateUser();
+  const { toast } = useSnackbar();
 
   const handleDeactivate = async (userId: string) => {
     try {
       await deactivateUser.mutateAsync(userId);
       toast.success("User deactivated successfully");
+      setDeactivateDialog({ open: false, user: null });
     } catch (error) {
       toast.error("Failed to deactivate user");
     }
@@ -76,300 +76,239 @@ export default function Users() {
 
   const getRoleBadge = (role: string) => {
     const colors = {
-      graduate:
-        "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-      guest: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-      admin:
-        "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
+      graduate: "success",
+      guest: "primary",
+      admin: "secondary",
     };
     return (
-      <Badge
-        variant="secondary"
-        className={colors[role as keyof typeof colors]}
-      >
-        {role.charAt(0).toUpperCase() + role.slice(1)}
-      </Badge>
+      <Chip
+        label={role.charAt(0).toUpperCase() + role.slice(1)}
+        color={colors[role as keyof typeof colors] as any}
+        size="small"
+      />
     );
   };
 
   const getStatusBadge = (isActive: boolean) => {
     return (
-      <Badge
-        variant={isActive ? "default" : "secondary"}
-        className={
-          isActive
-            ? "bg-green-600 text-white dark:bg-green-700"
-            : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
-        }
-      >
-        {isActive ? "Active" : "Inactive"}
-      </Badge>
+      <Chip
+        label={isActive ? "Active" : "Inactive"}
+        color={isActive ? "success" : "default"}
+        size="small"
+      />
     );
   };
 
   return (
-    <div className="h-full flex flex-col space-y-8">
-      <div className="space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight text-foreground">
+    <Box>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h3" fontWeight="bold" gutterBottom>
           Users
-        </h2>
-        <p className="text-muted-foreground text-lg">
+        </Typography>
+        <Typography variant="h6" color="text.secondary">
           Manage users across your platform
-        </p>
-      </div>
+        </Typography>
+      </Box>
 
-      <Card className="flex-1 flex flex-col min-h-0">
-        <CardHeader className="pb-6">
-          <CardTitle className="text-foreground">User Management</CardTitle>
-          <CardDescription>
+      <Card>
+        <CardContent>
+          <Typography variant="h6" fontWeight={600} gutterBottom>
+            User Management
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
             Search, filter, and manage all users
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex flex-col min-h-0 space-y-6">
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="md:col-span-1">
-              <Label htmlFor="search" className="text-sm font-medium">
-                Search Users
-              </Label>
-              <div className="relative mt-2">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="search"
-                  placeholder="Search by name, email, or username..."
-                  value={filters.search}
-                  onChange={(e) =>
-                    setFilters((prev) => ({
-                      ...prev,
-                      search: e.target.value,
-                      page: 1,
-                    }))
-                  }
-                  className="pl-9"
-                />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="role" className="text-sm font-medium">
-                Role
-              </Label>
-              <Select
+          </Typography>
+
+          <Grid container spacing={3} sx={{ mb: 3 }}>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                placeholder="Search by name, email, or username..."
+                value={filters.search}
+                onChange={(e) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    search: e.target.value,
+                    page: 1,
+                  }))
+                }
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <TextField
+                select
+                fullWidth
+                label="Role"
                 value={filters.role}
-                onValueChange={(value) =>
+                onChange={(e) =>
                   setFilters((prev) => ({
                     ...prev,
-                    role: value === "all" ? "" : value,
+                    role: e.target.value === "all" ? "" : e.target.value,
                     page: 1,
                   }))
                 }
               >
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="All roles" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All roles</SelectItem>
-                  <SelectItem value="graduate">Graduate</SelectItem>
-                  <SelectItem value="guest">Guest</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="status" className="text-sm font-medium">
-                Status
-              </Label>
-              <Select
+                <MenuItem value="all">All roles</MenuItem>
+                <MenuItem value="graduate">Graduate</MenuItem>
+                <MenuItem value="guest">Guest</MenuItem>
+                <MenuItem value="admin">Admin</MenuItem>
+              </TextField>
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <TextField
+                select
+                fullWidth
+                label="Status"
                 value={filters.status}
-                onValueChange={(value) =>
+                onChange={(e) =>
                   setFilters((prev) => ({
                     ...prev,
-                    status: value === "all" ? "" : value,
+                    status: e.target.value === "all" ? "" : e.target.value,
                     page: 1,
                   }))
                 }
               >
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="All statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All statuses</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+                <MenuItem value="all">All statuses</MenuItem>
+                <MenuItem value="active">Active</MenuItem>
+                <MenuItem value="inactive">Inactive</MenuItem>
+              </TextField>
+            </Grid>
+          </Grid>
 
-          <div className="flex-1 min-h-0 rounded-md border">
-            <div className="h-full overflow-auto">
-              <Table>
-                <TableHeader className="sticky top-0 bg-muted/50">
+          <TableContainer component={Paper} variant="outlined">
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>User</TableCell>
+                  <TableCell>Role</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Campus</TableCell>
+                  <TableCell>Joined</TableCell>
+                  <TableCell>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {isLoading ? (
                   <TableRow>
-                    <TableHead className="w-80">User</TableHead>
-                    <TableHead className="w-32">Role</TableHead>
-                    <TableHead className="w-32">Status</TableHead>
-                    <TableHead className="w-48">Campus</TableHead>
-                    <TableHead className="w-32">Joined</TableHead>
-                    <TableHead className="w-32">Actions</TableHead>
+                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                      <CircularProgress />
+                      <Typography variant="body2" sx={{ mt: 1 }}>
+                        Loading users...
+                      </Typography>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-12">
-                        <div className="flex items-center justify-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                          <span className="ml-2">Loading users...</span>
-                        </div>
+                ) : data.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                      <Typography color="text.secondary">
+                        No users found
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  Array.isArray(data) &&
+                  data.map((user: User) => (
+                    <TableRow key={user.id} hover>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Avatar
+                            src={user.profilePicture}
+                            alt={user.username}
+                            sx={{ width: 40, height: 40 }}
+                          >
+                            {user.firstName[0]}{user.lastName[0]}
+                          </Avatar>
+                          <Box>
+                            <Typography fontWeight={500}>
+                              {user.firstName} {user.lastName}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {user.email}
+                            </Typography>
+                          </Box>
+                        </Box>
                       </TableCell>
-                    </TableRow>
-                  ) : data.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-12">
-                        <div className="text-muted-foreground">
-                          No users found
-                        </div>
+                      <TableCell>{getRoleBadge(user.role)}</TableCell>
+                      <TableCell>{getStatusBadge(user.isActive)}</TableCell>
+                      <TableCell>
+                        {user.campus?.name || "N/A"}
                       </TableCell>
-                    </TableRow>
-                  ) : (
-                    Array.isArray(data) &&
-                    data.map((user: User) => (
-                      <TableRow key={user.id} className="hover:bg-muted/50">
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10">
-                              <AvatarImage
-                                src={user.profilePicture}
-                                alt={user.username}
-                              />
-
-                              <AvatarFallback className="bg-primary text-primary-foreground">
-                                {user.firstName[0]}
-
-                                {user.lastName[0]}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="font-medium text-foreground">
-                                {user.firstName} {user.lastName}
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                {user.email}
-                              </div>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>{getRoleBadge(user.role)}</TableCell>
-                        <TableCell>{getStatusBadge(user.isActive)}</TableCell>
-                        <TableCell className="text-foreground">
-                          {user.campus.name || "N/A"}
-                        </TableCell>
-                        <TableCell className="text-foreground">
-                          {new Date(user.createdAt).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              asChild
-                              className="hover:bg-accent"
+                      <TableCell>
+                        {new Date(user.createdAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <IconButton
+                            component={Link}
+                            to={`/users/${user.id}`}
+                            size="small"
+                          >
+                            <EyeIcon />
+                          </IconButton>
+                          {user.isActive ? (
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() =>
+                                setDeactivateDialog({ open: true, user })
+                              }
                             >
-                              <Link to={`/users/${user.id}`}>
-                                <Eye className="h-4 w-4" />
-                              </Link>
-                            </Button>
-                            {user.isActive ? (
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="hover:bg-destructive/10 hover:text-destructive"
-                                  >
-                                    <UserX className="h-4 w-4" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>
-                                      Deactivate User
-                                    </AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Are you sure you want to deactivate{" "}
-                                      {user.firstName} {user.lastName}? This
-                                      action can be reversed.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>
-                                      Cancel
-                                    </AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleDeactivate(user.id)}
-                                      disabled={deactivateUser.isPending}
-                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    >
-                                      Deactivate
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            ) : (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleActivate(user.id)}
-                                disabled={activateUser.isPending}
-                                className="hover:bg-green-100 hover:text-green-700 dark:hover:bg-green-900/30 dark:hover:text-green-400"
-                              >
-                                <UserCheck className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-
-          {/* {data?.pagination && (
-            <div className="flex items-center justify-between pt-4 border-t">
-              <div className="text-sm text-muted-foreground">
-                Showing {data.pagination.currentPage} of{" "}
-                {data.pagination.totalPages} pages ({data.pagination.totalItems}{" "}
-                total users)
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setFilters((prev) => ({ ...prev, page: prev.page - 1 }))
-                  }
-                  disabled={data.pagination.currentPage === 1}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setFilters((prev) => ({ ...prev, page: prev.page + 1 }))
-                  }
-                  disabled={
-                    data.pagination.currentPage === data.pagination.totalPages
-                  }
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          )} */}
+                              <UserXIcon />
+                            </IconButton>
+                          ) : (
+                            <IconButton
+                              size="small"
+                              color="success"
+                              onClick={() => handleActivate(user.id)}
+                              disabled={activateUser.isPending}
+                            >
+                              <UserCheckIcon />
+                            </IconButton>
+                          )}
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
         </CardContent>
       </Card>
-    </div>
+
+      <Dialog
+        open={deactivateDialog.open}
+        onClose={() => setDeactivateDialog({ open: false, user: null })}
+      >
+        <DialogTitle>Deactivate User</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to deactivate{" "}
+            {deactivateDialog.user?.firstName} {deactivateDialog.user?.lastName}?
+            This action can be reversed.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeactivateDialog({ open: false, user: null })}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => handleDeactivate(deactivateDialog.user!.id)}
+            disabled={deactivateUser.isPending}
+            color="error"
+            variant="contained"
+          >
+            Deactivate
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 }

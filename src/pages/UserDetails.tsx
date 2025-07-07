@@ -1,43 +1,40 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useUser, useDeactivateUser, useActivateUser } from "@/hooks/useUsers";
 import {
+  Box,
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
+  Typography,
+  Button,
+  Avatar,
+  Chip,
+  Grid,
+  Paper,
+  Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  CircularProgress,
+  IconButton,
+} from '@mui/material';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import {
-  ArrowLeft,
-  UserX,
-  UserCheck,
-  MessageSquare,
-  Eye,
-  Heart,
-  Calendar,
-  Mail,
-  GraduationCap,
-  Building,
-  MapPin,
-  ExternalLink,
-} from "lucide-react";
-import { toast } from "sonner";
+  ArrowBack as ArrowLeftIcon,
+  PersonOff as UserXIcon,
+  PersonAdd as UserCheckIcon,
+  Message as MessageSquareIcon,
+  Visibility as EyeIcon,
+  Favorite as HeartIcon,
+  CalendarToday as CalendarIcon,
+  Email as MailIcon,
+  School as GraduationCapIcon,
+  Business as BuildingIcon,
+  LocationOn as MapPinIcon,
+  Launch as ExternalLinkIcon,
+} from '@mui/icons-material';
+import { useState } from "react";
+import { useSnackbar } from "@/hooks/useSnackbar";
 
 export default function UserDetails() {
   const { userId } = useParams<{ userId: string }>();
@@ -45,12 +42,15 @@ export default function UserDetails() {
   const { data: user, isLoading } = useUser(userId!);
   const deactivateUser = useDeactivateUser();
   const activateUser = useActivateUser();
+  const { toast } = useSnackbar();
+  const [deactivateDialog, setDeactivateDialog] = useState(false);
 
   const handleDeactivate = async () => {
     if (!userId) return;
     try {
       await deactivateUser.mutateAsync(userId);
       toast.success("User deactivated successfully");
+      setDeactivateDialog(false);
     } catch (error) {
       toast.error("Failed to deactivate user");
     }
@@ -68,340 +68,326 @@ export default function UserDetails() {
 
   const getRoleBadge = (role: string) => {
     const colors = {
-      graduate:
-        "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-      guest: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-      admin:
-        "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
+      graduate: "success",
+      guest: "primary",
+      admin: "secondary",
     };
     return (
-      <Badge
-        variant="secondary"
-        className={colors[role as keyof typeof colors]}
-      >
-        {role.charAt(0).toUpperCase() + role.slice(1)}
-      </Badge>
+      <Chip
+        label={role.charAt(0).toUpperCase() + role.slice(1)}
+        color={colors[role as keyof typeof colors] as any}
+      />
     );
   };
 
   const getStatusBadge = (isActive: boolean) => {
     return (
-      <Badge
-        variant={isActive ? "default" : "secondary"}
-        className={
-          isActive
-            ? "bg-green-600 text-white dark:bg-green-700"
-            : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
-        }
-      >
-        {isActive ? "Active" : "Inactive"}
-      </Badge>
+      <Chip
+        label={isActive ? "Active" : "Inactive"}
+        color={isActive ? "success" : "default"}
+      />
     );
   };
 
   if (isLoading) {
     return (
-      <div className="h-full flex flex-col space-y-8 w-full">
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-10 w-10" />
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-4 w-32" />
-          </div>
-        </div>
-        <div className="grid gap-6 md:grid-cols-3 flex-1">
-          <Card className="md:col-span-2 h-96">
-            <CardHeader>
-              <Skeleton className="h-6 w-32" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-64 w-full" />
-            </CardContent>
-          </Card>
-          <div className="space-y-6">
-            <Card className="h-48">
-              <CardHeader>
-                <Skeleton className="h-6 w-32" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-32 w-full" />
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+        <CircularProgress />
+      </Box>
     );
   }
 
   if (!user) {
     return (
-      <div className="h-full flex flex-col items-center justify-center space-y-4 w-full">
-        <h2 className="text-2xl font-bold text-foreground">User not found</h2>
-        <p className="text-muted-foreground">
+      <Box sx={{ textAlign: 'center', py: 8 }}>
+        <Typography variant="h4" fontWeight="bold" gutterBottom>
+          User not found
+        </Typography>
+        <Typography color="text.secondary" sx={{ mb: 3 }}>
           The user you're looking for doesn't exist.
-        </p>
-        <Button onClick={() => navigate("/users")}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<ArrowLeftIcon />}
+          onClick={() => navigate("/users")}
+        >
           Back to Users
         </Button>
-      </div>
+      </Box>
     );
   }
 
   return (
-    <div className="h-full flex flex-col space-y-8 w-full">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/users")}
-            className="hover:bg-accent"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div className="space-y-1">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground">
+    <Box>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <IconButton onClick={() => navigate("/users")}>
+            <ArrowLeftIcon />
+          </IconButton>
+          <Box>
+            <Typography variant="h3" fontWeight="bold">
               {user.firstName} {user.lastName}
-            </h2>
-            <p className="text-muted-foreground text-lg">@{user.username}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" asChild>
-            <Link to={`/posts?userId=${user.id}`}>
-              <MessageSquare className="mr-2 h-4 w-4" />
-              View Posts
-            </Link>
+            </Typography>
+            <Typography variant="h6" color="text.secondary">
+              @{user.username}
+            </Typography>
+          </Box>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<MessageSquareIcon />}
+            component={Link}
+            to={`/posts?userId=${user.id}`}
+          >
+            View Posts
           </Button>
           {user.isActive ? (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive">
-                  <UserX className="mr-2 h-4 w-4" />
-                  Deactivate
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Deactivate User</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to deactivate {user.firstName}{" "}
-                    {user.lastName}? This action can be reversed.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDeactivate}
-                    disabled={deactivateUser.isPending}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    Deactivate
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <Button
+              variant="contained"
+              color="error"
+              startIcon={<UserXIcon />}
+              onClick={() => setDeactivateDialog(true)}
+            >
+              Deactivate
+            </Button>
           ) : (
             <Button
+              variant="contained"
+              color="success"
+              startIcon={<UserCheckIcon />}
               onClick={handleActivate}
               disabled={activateUser.isPending}
-              className="bg-green-600 hover:bg-green-700 text-white"
             >
-              <UserCheck className="mr-2 h-4 w-4" />
               Activate
             </Button>
           )}
-        </div>
-      </div>
+        </Box>
+      </Box>
 
-      <div className="grid gap-6 md:grid-cols-3 flex-1 min-h-0">
-        <Card className="md:col-span-2 flex flex-col">
-          <CardHeader className="pb-6">
-            <CardTitle className="text-foreground">
-              Profile Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex-1 space-y-6">
-            <div className="flex items-start gap-6">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={user.profilePicture} alt={user.username} />
-                <AvatarFallback className="text-xl bg-primary text-primary-foreground">
-                  {user.firstName[0]}
-                  {user.lastName[0]}
-                </AvatarFallback>
-              </Avatar>
-              <div className="space-y-3 flex-1">
-                <div className="flex items-center gap-3">
-                  {getRoleBadge(user.role)}
-                  {getStatusBadge(user.isActive)}
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Mail className="h-4 w-4" />
-                    {user.email}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
-                    Joined {new Date(user.createdAt).toLocaleDateString()}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {user.bio && (
-              <>
-                <Separator />
-                <div>
-                  <h4 className="font-medium mb-3 text-foreground">Bio</h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {user.bio}
-                  </p>
-                </div>
-              </>
-            )}
-
-            <Separator />
-
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="space-y-3">
-                <h4 className="font-medium text-foreground">
-                  Academic Information
-                </h4>
-                <div className="space-y-2 text-sm">
-                  {user.campus && (
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-foreground">{user.campus}</span>
-                    </div>
-                  )}
-                  {user.college && (
-                    <div className="flex items-center gap-2">
-                      <Building className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-foreground">{user.college}</span>
-                    </div>
-                  )}
-                  {user.department && (
-                    <div className="flex items-center gap-2">
-                      <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-foreground">{user.department}</span>
-                    </div>
-                  )}
-                  {user.graduationYear && (
-                    <div className="text-muted-foreground">
-                      Class of {user.graduationYear}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {user.socialLinks && user.socialLinks.length > 0 && (
-                <div className="space-y-3">
-                  <h4 className="font-medium text-foreground">Social Links</h4>
-                  <div className="space-y-2">
-                    {user.socialLinks.map((link, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-2 text-sm"
-                      >
-                        <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                        <span className="capitalize text-foreground">
-                          {link.platform}:
-                        </span>
-                        <a
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline"
-                        >
-                          @{link.username}
-                        </a>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="space-y-6">
-          {user.stats && (
-            <Card>
-              <CardHeader className="pb-4">
-                <CardTitle className="text-foreground">Statistics</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                  <div className="flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Posts</span>
-                  </div>
-                  <span className="font-bold text-foreground">
-                    {user.stats.postsCount}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                  <div className="flex items-center gap-2">
-                    <Heart className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Likes Received</span>
-                  </div>
-                  <span className="font-bold text-foreground">
-                    {user.stats.likesReceived}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                  <div className="flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">
-                      Comments Received
-                    </span>
-                  </div>
-                  <span className="font-bold text-foreground">
-                    {user.stats.commentsReceived}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                  <div className="flex items-center gap-2">
-                    <Eye className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Profile Views</span>
-                  </div>
-                  <span className="font-bold text-foreground">
-                    {user.stats.profileViews}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={8}>
           <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="text-foreground">Account Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">User ID</span>
-                  <span className="font-mono text-xs text-foreground">
-                    {user.id}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Created</span>
-                  <span className="text-foreground">
-                    {new Date(user.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Last Updated</span>
-                  <span className="text-foreground">
-                    {new Date(user.updatedAt).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
+            <CardContent>
+              <Typography variant="h6" fontWeight={600} gutterBottom>
+                Profile Information
+              </Typography>
+
+              <Box sx={{ display: 'flex', gap: 3, mb: 3 }}>
+                <Avatar
+                  src={user.profilePicture}
+                  alt={user.username}
+                  sx={{ width: 96, height: 96 }}
+                >
+                  {user.firstName[0]}{user.lastName[0]}
+                </Avatar>
+                <Box sx={{ flex: 1 }}>
+                  <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                    {getRoleBadge(user.role)}
+                    {getStatusBadge(user.isActive)}
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <MailIcon fontSize="small" color="action" />
+                    <Typography variant="body2">{user.email}</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <CalendarIcon fontSize="small" color="action" />
+                    <Typography variant="body2">
+                      Joined {new Date(user.createdAt).toLocaleDateString()}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+
+              {user.bio && (
+                <>
+                  <Divider sx={{ my: 3 }} />
+                  <Box>
+                    <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                      Bio
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {user.bio}
+                    </Typography>
+                  </Box>
+                </>
+              )}
+
+              <Divider sx={{ my: 3 }} />
+
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                    Academic Information
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {user.campus && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <MapPinIcon fontSize="small" color="action" />
+                        <Typography variant="body2">{user.campus}</Typography>
+                      </Box>
+                    )}
+                    {user.college && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <BuildingIcon fontSize="small" color="action" />
+                        <Typography variant="body2">{user.college}</Typography>
+                      </Box>
+                    )}
+                    {user.department && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <GraduationCapIcon fontSize="small" color="action" />
+                        <Typography variant="body2">{user.department}</Typography>
+                      </Box>
+                    )}
+                    {user.graduationYear && (
+                      <Typography variant="body2" color="text.secondary">
+                        Class of {user.graduationYear}
+                      </Typography>
+                    )}
+                  </Box>
+                </Grid>
+
+                {user.socialLinks && user.socialLinks.length > 0 && (
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                      Social Links
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      {user.socialLinks.map((link, index) => (
+                        <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <ExternalLinkIcon fontSize="small" color="action" />
+                          <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>
+                            {link.platform}:
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            component="a"
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                          >
+                            @{link.username}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Grid>
+                )}
+              </Grid>
             </CardContent>
           </Card>
-        </div>
-      </div>
-    </div>
+        </Grid>
+
+        <Grid item xs={12} md={4}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {user.stats && (
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" fontWeight={600} gutterBottom>
+                    Statistics
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Paper elevation={0} sx={{ p: 2, backgroundColor: 'action.hover' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <MessageSquareIcon fontSize="small" color="action" />
+                          <Typography variant="body2" fontWeight={500}>Posts</Typography>
+                        </Box>
+                        <Typography variant="h6" fontWeight="bold">
+                          {user.stats.postsCount}
+                        </Typography>
+                      </Box>
+                    </Paper>
+                    <Paper elevation={0} sx={{ p: 2, backgroundColor: 'action.hover' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <HeartIcon fontSize="small" color="action" />
+                          <Typography variant="body2" fontWeight={500}>Likes Received</Typography>
+                        </Box>
+                        <Typography variant="h6" fontWeight="bold">
+                          {user.stats.likesReceived}
+                        </Typography>
+                      </Box>
+                    </Paper>
+                    <Paper elevation={0} sx={{ p: 2, backgroundColor: 'action.hover' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <MessageSquareIcon fontSize="small" color="action" />
+                          <Typography variant="body2" fontWeight={500}>Comments Received</Typography>
+                        </Box>
+                        <Typography variant="h6" fontWeight="bold">
+                          {user.stats.commentsReceived}
+                        </Typography>
+                      </Box>
+                    </Paper>
+                    <Paper elevation={0} sx={{ p: 2, backgroundColor: 'action.hover' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <EyeIcon fontSize="small" color="action" />
+                          <Typography variant="body2" fontWeight={500}>Profile Views</Typography>
+                        </Box>
+                        <Typography variant="h6" fontWeight="bold">
+                          {user.stats.profileViews}
+                        </Typography>
+                      </Box>
+                    </Paper>
+                  </Box>
+                </CardContent>
+              </Card>
+            )}
+
+            <Card>
+              <CardContent>
+                <Typography variant="h6" fontWeight={600} gutterBottom>
+                  Account Details
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant="body2" color="text.secondary">User ID</Typography>
+                    <Typography variant="body2" fontFamily="monospace" fontSize="0.75rem">
+                      {user.id}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant="body2" color="text.secondary">Created</Typography>
+                    <Typography variant="body2">
+                      {new Date(user.createdAt).toLocaleDateString()}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant="body2" color="text.secondary">Last Updated</Typography>
+                    <Typography variant="body2">
+                      {new Date(user.updatedAt).toLocaleDateString()}
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Box>
+        </Grid>
+      </Grid>
+
+      <Dialog open={deactivateDialog} onClose={() => setDeactivateDialog(false)}>
+        <DialogTitle>Deactivate User</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to deactivate {user.firstName} {user.lastName}?
+            This action can be reversed.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeactivateDialog(false)}>Cancel</Button>
+          <Button
+            onClick={handleDeactivate}
+            disabled={deactivateUser.isPending}
+            color="error"
+            variant="contained"
+          >
+            Deactivate
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 }

@@ -2,45 +2,41 @@ import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { usePosts, useSoftDeletePost } from "@/hooks/usePosts";
 import {
+  Box,
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
+  Typography,
+  Grid,
+  TextField,
+  MenuItem,
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
-  TableHeader,
   TableRow,
-} from "@/components/ui/table";
+  Paper,
+  Avatar,
+  Chip,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
+  CircularProgress,
+  InputAdornment,
+} from '@mui/material';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Search, Trash2, Heart, MessageSquare, Share } from "lucide-react";
-import { toast } from "sonner";
+  Search as SearchIcon,
+  Delete as Trash2Icon,
+  Favorite as HeartIcon,
+  Message as MessageSquareIcon,
+  Share as ShareIcon,
+} from '@mui/icons-material';
+import { useState as useStateDialog } from "react";
+import { useSnackbar } from "@/hooks/useSnackbar";
 
 export default function Posts() {
   const [searchParams] = useSearchParams();
@@ -51,14 +47,20 @@ export default function Posts() {
     type: "",
     userId: searchParams.get("userId") || "",
   });
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; postId: string | null }>({
+    open: false,
+    postId: null,
+  });
 
   const { data, isLoading } = usePosts(filters);
   const softDeletePost = useSoftDeletePost();
+  const { toast } = useSnackbar();
 
   const handleSoftDelete = async (postId: string) => {
     try {
       await softDeletePost.mutateAsync(postId);
       toast.success("Post deleted successfully");
+      setDeleteDialog({ open: false, postId: null });
     } catch (error) {
       toast.error("Failed to delete post");
     }
@@ -66,18 +68,15 @@ export default function Posts() {
 
   const getTypeBadge = (type: string) => {
     const colors = {
-      lastword:
-        "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
-      question:
-        "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+      lastword: "secondary",
+      question: "primary",
     };
     return (
-      <Badge
-        variant="secondary"
-        className={colors[type as keyof typeof colors]}
-      >
-        {type === "lastword" ? "Last Word" : "Question"}
-      </Badge>
+      <Chip
+        label={type === "lastword" ? "Last Word" : "Question"}
+        color={colors[type as keyof typeof colors] as any}
+        size="small"
+      />
     );
   };
 
@@ -87,233 +86,196 @@ export default function Posts() {
   };
 
   return (
-    <div className="h-full flex flex-col space-y-8 w-full">
-      <div className="space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight text-foreground">
+    <Box>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h3" fontWeight="bold" gutterBottom>
           Posts
-        </h2>
-        <p className="text-muted-foreground text-lg">
+        </Typography>
+        <Typography variant="h6" color="text.secondary">
           Manage posts and content across the platform
-        </p>
-      </div>
+        </Typography>
+      </Box>
 
-      <Card className="flex-1 flex flex-col min-h-0 w-full">
-        <CardHeader className="pb-6">
-          <CardTitle className="text-foreground">Post Management</CardTitle>
-          <CardDescription>Search, filter, and moderate posts</CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex flex-col min-h-0 space-y-6">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <Label htmlFor="search" className="text-sm font-medium">
-                Search Posts
-              </Label>
-              <div className="relative mt-2">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="search"
-                  placeholder="Search by content..."
-                  value={filters.search}
-                  onChange={(e) =>
-                    setFilters((prev) => ({
-                      ...prev,
-                      search: e.target.value,
-                      page: 1,
-                    }))
-                  }
-                  className="pl-9"
-                />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="type" className="text-sm font-medium">
-                Post Type
-              </Label>
-              <Select
-                value={filters.type}
-                onValueChange={(value) =>
+      <Card>
+        <CardContent>
+          <Typography variant="h6" fontWeight={600} gutterBottom>
+            Post Management
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Search, filter, and moderate posts
+          </Typography>
+
+          <Grid container spacing={3} sx={{ mb: 3 }}>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                placeholder="Search by content..."
+                value={filters.search}
+                onChange={(e) =>
                   setFilters((prev) => ({
                     ...prev,
-                    type: value === "all" ? "" : value,
+                    search: e.target.value,
+                    page: 1,
+                  }))
+                }
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                select
+                fullWidth
+                label="Post Type"
+                value={filters.type}
+                onChange={(e) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    type: e.target.value === "all" ? "" : e.target.value,
                     page: 1,
                   }))
                 }
               >
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="All types" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All types</SelectItem>
-                  <SelectItem value="lastword">Last Word</SelectItem>
-                  <SelectItem value="question">Question</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+                <MenuItem value="all">All types</MenuItem>
+                <MenuItem value="lastword">Last Word</MenuItem>
+                <MenuItem value="question">Question</MenuItem>
+              </TextField>
+            </Grid>
+          </Grid>
 
-          <div className="flex-1 min-h-0 rounded-md border w-full">
-            <div className="h-full overflow-auto">
-              <Table>
-                <TableHeader className="sticky top-0 bg-muted/50">
+          <TableContainer component={Paper} variant="outlined">
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Author</TableCell>
+                  <TableCell>Content</TableCell>
+                  <TableCell>Type</TableCell>
+                  <TableCell>Engagement</TableCell>
+                  <TableCell>Created</TableCell>
+                  <TableCell>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {isLoading ? (
                   <TableRow>
-                    <TableHead className="w-80">Author</TableHead>
-                    <TableHead className="w-96">Content</TableHead>
-                    <TableHead className="w-32">Type</TableHead>
-                    <TableHead className="w-40">Engagement</TableHead>
-                    <TableHead className="w-32">Created</TableHead>
-                    <TableHead className="w-24">Actions</TableHead>
+                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                      <CircularProgress />
+                      <Typography variant="body2" sx={{ mt: 1 }}>
+                        Loading posts...
+                      </Typography>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-12">
-                        <div className="flex items-center justify-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                          <span className="ml-2">Loading posts...</span>
-                        </div>
+                ) : data.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                      <Typography color="text.secondary">
+                        No posts found
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  data?.map((post) => (
+                    <TableRow key={post.id} hover>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Avatar
+                            src={post.user.profilePicture}
+                            alt={post.user.username}
+                            sx={{ width: 40, height: 40 }}
+                          >
+                            {post.user.firstName[0]}{post.user.lastName[0]}
+                          </Avatar>
+                          <Box>
+                            <Typography fontWeight={500}>
+                              {post.user.firstName} {post.user.lastName}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              @{post.user.username}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Box>
+                          <Typography variant="body2">
+                            {truncateContent(post.content)}
+                          </Typography>
+                          {post.question && (
+                            <Typography variant="caption" color="text.secondary">
+                              Q: {truncateContent(post.question.text, 50)}
+                            </Typography>
+                          )}
+                        </Box>
+                      </TableCell>
+                      <TableCell>{getTypeBadge(post.type)}</TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', gap: 2 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <HeartIcon fontSize="small" color="action" />
+                            <Typography variant="body2">{post.likesCount}</Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <MessageSquareIcon fontSize="small" color="action" />
+                            <Typography variant="body2">{post.commentsCount}</Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <ShareIcon fontSize="small" color="action" />
+                            <Typography variant="body2">{post.sharesCount}</Typography>
+                          </Box>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        {new Date(post.createdAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() =>
+                            setDeleteDialog({ open: true, postId: post.id })
+                          }
+                        >
+                          <Trash2Icon />
+                        </IconButton>
                       </TableCell>
                     </TableRow>
-                  ) : data.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-12">
-                        <div className="text-muted-foreground">
-                          No posts found
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    data?.map((post) => (
-                      <TableRow key={post.id} className="hover:bg-muted/50">
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10">
-                              <AvatarImage
-                                src={post.user.profilePicture}
-                                alt={post.user.username}
-                              />
-                              <AvatarFallback className="bg-primary text-primary-foreground">
-                                {post.user.firstName[0]}
-                                {post.user.lastName[0]}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="font-medium text-foreground">
-                                {post.user.firstName} {post.user.lastName}
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                @{post.user.username}
-                              </div>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <p className="text-sm text-foreground">
-                              {truncateContent(post.content)}
-                            </p>
-                            {post.question && (
-                              <p className="text-xs text-muted-foreground">
-                                Q: {truncateContent(post.question.text, 50)}
-                              </p>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>{getTypeBadge(post.type)}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <Heart className="h-3 w-3" />
-                              {post.likesCount}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <MessageSquare className="h-3 w-3" />
-                              {post.commentsCount}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Share className="h-3 w-3" />
-                              {post.sharesCount}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-foreground">
-                          {new Date(post.createdAt).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="hover:bg-destructive/10 hover:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Post</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete this post?
-                                  This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleSoftDelete(post.id)}
-                                  disabled={softDeletePost.isPending}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-
-          {data?.pagination && (
-            <div className="flex items-center justify-between pt-4 border-t">
-              <div className="text-sm text-muted-foreground">
-                Showing {data.pagination.currentPage} of{" "}
-                {data.pagination.totalPages} pages ({data.pagination.totalItems}{" "}
-                total posts)
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setFilters((prev) => ({ ...prev, page: prev.page - 1 }))
-                  }
-                  disabled={data.pagination.currentPage === 1}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setFilters((prev) => ({ ...prev, page: prev.page + 1 }))
-                  }
-                  disabled={
-                    data.pagination.currentPage === data.pagination.totalPages
-                  }
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
         </CardContent>
       </Card>
-    </div>
+
+      <Dialog
+        open={deleteDialog.open}
+        onClose={() => setDeleteDialog({ open: false, postId: null })}
+      >
+        <DialogTitle>Delete Post</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this post? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialog({ open: false, postId: null })}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => handleSoftDelete(deleteDialog.postId!)}
+            disabled={softDeletePost.isPending}
+            color="error"
+            variant="contained"
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 }
