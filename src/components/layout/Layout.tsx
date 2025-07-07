@@ -1,27 +1,29 @@
 import { Outlet } from "react-router-dom";
+import { Box } from '@mui/material';
+import { SnackbarProvider } from 'notistack';
 import Sidebar from "./Sidebar";
 import Header from "./Header";
-import { Toaster } from "@/components/ui/sonner";
 
 export default function Layout() {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="flex h-screen">
+    <SnackbarProvider maxSnack={3} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
+      <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
         <Sidebar />
-        <div className="flex-1 flex flex-col min-w-0">
+        <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
           <Header />
-          <main className="flex-1 overflow-auto">
-            <div className="h-full">
-              <div className="w-full max-w-[1600px] mx-auto px-8 py-8 h-full">
-                <div className="h-full w-full">
-                  <Outlet />
-                </div>
-              </div>
-            </div>
-          </main>
-        </div>
-      </div>
-      <Toaster />
-    </div>
+          <Box 
+            component="main" 
+            sx={{ 
+              flexGrow: 1, 
+              overflow: 'auto',
+              p: 3,
+              backgroundColor: 'background.default'
+            }}
+          >
+            <Outlet />
+          </Box>
+        </Box>
+      </Box>
+    </SnackbarProvider>
   );
 }

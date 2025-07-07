@@ -1,90 +1,144 @@
 import { Link, useLocation } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import { useUIStore } from "@/stores/ui";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  BarChart3,
-  Users,
-  MessageSquare,
-  Building,
-  AlertTriangle,
-  HelpCircle,
-  Tags,
-  Home,
-  Menu,
-  GraduationCap,
-} from "lucide-react";
+  Box,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Typography,
+  IconButton,
+  Divider,
+  useTheme,
+} from '@mui/material';
+import {
+  Dashboard as DashboardIcon,
+  People as UsersIcon,
+  Message as MessageIcon,
+  Business as BuildingIcon,
+  Warning as AlertIcon,
+  Help as HelpIcon,
+  Tag as TagIcon,
+  BarChart as AnalyticsIcon,
+  Menu as MenuIcon,
+  School as GraduationCapIcon,
+} from '@mui/icons-material';
+import { useUIStore } from "@/stores/ui";
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: Home },
-  { name: "Users", href: "/users", icon: Users },
-  { name: "Posts", href: "/posts", icon: MessageSquare },
-  { name: "Academic Structure", href: "/academic", icon: Building },
-  { name: "Reports", href: "/reports", icon: AlertTriangle },
-  { name: "Questions", href: "/questions", icon: HelpCircle },
-  { name: "Tags", href: "/tags", icon: Tags },
-  { name: "Analytics", href: "/analytics", icon: BarChart3 },
+  { name: "Dashboard", href: "/", icon: DashboardIcon },
+  { name: "Users", href: "/users", icon: UsersIcon },
+  { name: "Posts", href: "/posts", icon: MessageIcon },
+  { name: "Academic Structure", href: "/academic", icon: BuildingIcon },
+  { name: "Reports", href: "/reports", icon: AlertIcon },
+  { name: "Questions", href: "/questions", icon: HelpIcon },
+  { name: "Tags", href: "/tags", icon: TagIcon },
+  { name: "Analytics", href: "/analytics", icon: AnalyticsIcon },
 ];
+
+const SIDEBAR_WIDTH = 280;
+const SIDEBAR_COLLAPSED_WIDTH = 64;
 
 export default function Sidebar() {
   const location = useLocation();
+  const theme = useTheme();
   const { sidebarCollapsed, toggleSidebar } = useUIStore();
 
-  return (
-    <div
-      className={cn(
-        "bg-card border-r border-border flex flex-col transition-all duration-300 shrink-0",
-        sidebarCollapsed ? "w-16" : "w-72"
-      )}
-    >
-      <div className="p-6 border-b border-border">
-        <div className="flex items-center justify-between">
-          <div
-            className={cn(
-              "flex items-center gap-3 transition-opacity",
-              sidebarCollapsed ? "opacity-0" : "opacity-100"
-            )}
-          >
-            <GraduationCap className="h-8 w-8 text-primary shrink-0" />
-            <h1 className="text-xl font-bold text-foreground">GradBook</h1>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleSidebar}
-            className="p-2 hover:bg-accent"
-          >
-            <Menu className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+  const drawerContent = (
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Box 
+        sx={{ 
+          p: 2, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: sidebarCollapsed ? 'center' : 'space-between',
+          borderBottom: `1px solid ${theme.palette.divider}`,
+        }}
+      >
+        {!sidebarCollapsed && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <GraduationCapIcon color="primary" sx={{ fontSize: 32 }} />
+            <Typography variant="h5" fontWeight="bold" color="primary">
+              GradBook
+            </Typography>
+          </Box>
+        )}
+        <IconButton onClick={toggleSidebar} size="small">
+          <MenuIcon />
+        </IconButton>
+      </Box>
 
-      <ScrollArea className="flex-1 px-4">
-        <nav className="space-y-2 py-6">
-          {navigation.map((item) => {
-            const isActive = location.pathname === item.href;
-            return (
-              <Link
-                key={item.name}
+      <List sx={{ flexGrow: 1, py: 2 }}>
+        {navigation.map((item) => {
+          const isActive = location.pathname === item.href;
+          const IconComponent = item.icon;
+          
+          return (
+            <ListItem key={item.name} disablePadding sx={{ px: 1 }}>
+              <ListItemButton
+                component={Link}
                 to={item.href}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200",
-                  isActive
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                  sidebarCollapsed && "justify-center px-2"
-                )}
+                selected={isActive}
+                sx={{
+                  borderRadius: 2,
+                  mx: 1,
+                  mb: 0.5,
+                  minHeight: 48,
+                  justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+                  px: sidebarCollapsed ? 1.5 : 2,
+                  '&.Mui-selected': {
+                    backgroundColor: theme.palette.primary.main,
+                    color: theme.palette.primary.contrastText,
+                    '&:hover': {
+                      backgroundColor: theme.palette.primary.dark,
+                    },
+                    '& .MuiListItemIcon-root': {
+                      color: theme.palette.primary.contrastText,
+                    },
+                  },
+                }}
               >
-                <item.icon className="h-5 w-5 shrink-0" />
+                <ListItemIcon 
+                  sx={{ 
+                    minWidth: sidebarCollapsed ? 0 : 40,
+                    justifyContent: 'center',
+                  }}
+                >
+                  <IconComponent />
+                </ListItemIcon>
                 {!sidebarCollapsed && (
-                  <span className="truncate">{item.name}</span>
+                  <ListItemText 
+                    primary={item.name} 
+                    primaryTypographyProps={{ fontWeight: 500 }}
+                  />
                 )}
-              </Link>
-            );
-          })}
-        </nav>
-      </ScrollArea>
-    </div>
+              </ListItemButton>
+            </ListItem>
+          );
+        })}
+      </List>
+    </Box>
+  );
+
+  return (
+    <Drawer
+      variant="permanent"
+      sx={{
+        width: sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH,
+        flexShrink: 0,
+        '& .MuiDrawer-paper': {
+          width: sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH,
+          boxSizing: 'border-box',
+          transition: theme.transitions.create('width', {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.enteringScreen,
+          }),
+          overflowX: 'hidden',
+        },
+      }}
+    >
+      {drawerContent}
+    </Drawer>
   );
 }

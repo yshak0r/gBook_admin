@@ -2,8 +2,11 @@ import { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { ThemeProvider } from '@mui/material/styles';
+import { CssBaseline } from '@mui/material';
 import { useUIStore } from "@/stores/ui";
 import { useAuthStore } from "@/stores/auth";
+import { lightTheme, darkTheme } from "@/theme/theme";
 import Layout from "@/components/layout/Layout";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Login from "@/pages/Login";
@@ -16,7 +19,6 @@ import Reports from "@/pages/Reports";
 import Questions from "@/pages/Questions";
 import Tags from "@/pages/Tags";
 import Analytics from "@/pages/Analytics";
-import "./App.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,40 +35,39 @@ function App() {
   const { checkAuth } = useAuthStore();
 
   useEffect(() => {
-    document.documentElement.classList.toggle("dark", theme === "dark");
-  }, [theme]);
-
-  useEffect(() => {
     checkAuth();
   }, [checkAuth]);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <Router>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<Dashboard />} />
-            <Route path="users" element={<Users />} />
-            <Route path="users/:userId" element={<UserDetails />} />
-            <Route path="posts" element={<Posts />} />
-            <Route path="academic" element={<AcademicStructure />} />
-            <Route path="reports" element={<Reports />} />
-            <Route path="questions" element={<Questions />} />
-            <Route path="tags" element={<Tags />} />
-            <Route path="analytics" element={<Analytics />} />
-          </Route>
-        </Routes>
-      </Router>
-      {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
-    </QueryClientProvider>
+    <ThemeProvider theme={theme === 'dark' ? darkTheme : lightTheme}>
+      <CssBaseline />
+      <QueryClientProvider client={queryClient}>
+        <Router>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Dashboard />} />
+              <Route path="users" element={<Users />} />
+              <Route path="users/:userId" element={<UserDetails />} />
+              <Route path="posts" element={<Posts />} />
+              <Route path="academic" element={<AcademicStructure />} />
+              <Route path="reports" element={<Reports />} />
+              <Route path="questions" element={<Questions />} />
+              <Route path="tags" element={<Tags />} />
+              <Route path="analytics" element={<Analytics />} />
+            </Route>
+          </Routes>
+        </Router>
+        {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 

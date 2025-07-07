@@ -1,16 +1,22 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import {
+  Box,
+  Card,
+  CardContent,
+  TextField,
+  Button,
+  Typography,
+  Alert,
+  Avatar,
+  Container,
+} from '@mui/material';
+import { School as GraduationCapIcon } from '@mui/icons-material';
 import { useAuthStore } from '@/stores/auth';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { GraduationCap } from 'lucide-react';
-import { toast } from 'sonner';
+import { useSnackbar } from 'notistack';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -23,79 +29,116 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const { login, isLoading } = useAuthStore();
   const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
 
   const {
-    register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
   });
 
   const onSubmit = async (data: LoginForm) => {
     try {
       setError(null);
       await login(data.email, data.password);
-      toast.success('Login successful');
+      enqueueSnackbar('Login successful', { variant: 'success' });
       navigate('/');
     } catch (error: any) {
       const message = error.response?.data?.message || 'Login failed';
       setError(message);
-      toast.error(message);
+      enqueueSnackbar(message, { variant: 'error' });
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <div className="flex items-center justify-center mb-4">
-            <GraduationCap className="h-12 w-12 text-primary" />
-          </div>
-          <CardTitle className="text-2xl text-center">GradBook Admin</CardTitle>
-          <CardDescription className="text-center">
-            Sign in to your admin account
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="admin@example.com"
-                {...register('email')}
-                disabled={isLoading}
+    <Container maxWidth="sm">
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          py: 3,
+        }}
+      >
+        <Card sx={{ width: '100%', maxWidth: 400 }}>
+          <CardContent sx={{ p: 4 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
+              <Avatar sx={{ m: 1, bgcolor: 'primary.main', width: 56, height: 56 }}>
+                <GraduationCapIcon sx={{ fontSize: 32 }} />
+              </Avatar>
+              <Typography component="h1" variant="h4" fontWeight="bold" textAlign="center">
+                GradBook Admin
+              </Typography>
+              <Typography variant="body2" color="text.secondary" textAlign="center" mt={1}>
+                Sign in to your admin account
+              </Typography>
+            </Box>
+
+            <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ mt: 1 }}>
+              <Controller
+                name="email"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    margin="normal"
+                    required
+                    fullWidth
+                    label="Email"
+                    type="email"
+                    autoComplete="email"
+                    autoFocus
+                    disabled={isLoading}
+                    error={!!errors.email}
+                    helperText={errors.email?.message}
+                  />
+                )}
               />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                {...register('password')}
-                disabled={isLoading}
+              <Controller
+                name="password"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    margin="normal"
+                    required
+                    fullWidth
+                    label="Password"
+                    type="password"
+                    autoComplete="current-password"
+                    disabled={isLoading}
+                    error={!!errors.password}
+                    helperText={errors.password?.message}
+                  />
+                )}
               />
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
+              
+              {error && (
+                <Alert severity="error" sx={{ mt: 2 }}>
+                  {error}
+                </Alert>
               )}
-            </div>
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Signing in...' : 'Sign in'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                sx={{ mt: 3, mb: 2, py: 1.5 }}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Signing in...' : 'Sign in'}
+              </Button>
+            </Box>
+          </CardContent>
+        </Card>
+      </Box>
+    </Container>
   );
 }

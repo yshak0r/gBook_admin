@@ -1,13 +1,20 @@
 import { useAnalytics } from "@/hooks/useAnalytics";
 import {
+  Box,
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+  Typography,
+  Grid,
+  Skeleton,
+  Chip,
+  Paper,
+} from '@mui/material';
+import {
+  People as UsersIcon,
+  Message as MessageIcon,
+  Warning as AlertIcon,
+  TrendingUp as TrendingUpIcon,
+} from '@mui/icons-material';
 import {
   BarChart,
   Bar,
@@ -22,53 +29,51 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { Users, MessageSquare, AlertTriangle, TrendingUp } from "lucide-react";
 
-const COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6"];
+const COLORS = ["#1976d2", "#4caf50", "#ff9800", "#f44336", "#9c27b0"];
 
 export default function Dashboard() {
   const { data: analytics, isLoading } = useAnalytics();
 
   if (isLoading) {
     return (
-      <div className="h-full flex flex-col space-y-8">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-4 w-96" />
-        </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <Box sx={{ p: 3 }}>
+        <Box sx={{ mb: 4 }}>
+          <Skeleton variant="text" width={200} height={40} />
+          <Skeleton variant="text" width={400} height={24} />
+        </Box>
+        <Grid container spacing={3} sx={{ mb: 4 }}>
           {[...Array(4)].map((_, i) => (
-            <Card key={i} className="h-32">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-4 w-4" />
-              </CardHeader>
+            <Grid item xs={12} sm={6} md={3} key={i}>
+              <Card>
+                <CardContent>
+                  <Skeleton variant="text" width={100} height={20} />
+                  <Skeleton variant="text" width={80} height={32} />
+                  <Skeleton variant="text" width={120} height={16} />
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={8}>
+            <Card>
               <CardContent>
-                <Skeleton className="h-7 w-16 mb-1" />
-                <Skeleton className="h-3 w-24" />
+                <Skeleton variant="text" width={150} height={24} />
+                <Skeleton variant="rectangular" width="100%" height={300} />
               </CardContent>
             </Card>
-          ))}
-        </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7 flex-1">
-          <Card className="col-span-4">
-            <CardHeader>
-              <Skeleton className="h-6 w-40" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-80 w-full" />
-            </CardContent>
-          </Card>
-          <Card className="col-span-3">
-            <CardHeader>
-              <Skeleton className="h-6 w-32" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-80 w-full" />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Card>
+              <CardContent>
+                <Skeleton variant="text" width={120} height={24} />
+                <Skeleton variant="rectangular" width="100%" height={300} />
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      </Box>
     );
   }
 
@@ -77,29 +82,29 @@ export default function Dashboard() {
       title: "Total Users",
       value: analytics?.totalUsers || 0,
       change: "+12%",
-      icon: Users,
-      color: "text-blue-600",
+      icon: UsersIcon,
+      color: "primary",
     },
     {
       title: "Total Posts",
       value: analytics?.totalPosts || 0,
       change: "+5%",
-      icon: MessageSquare,
-      color: "text-green-600",
+      icon: MessageIcon,
+      color: "success",
     },
     {
       title: "Pending Reports",
       value: analytics?.pendingReports || 0,
       change: "-2%",
-      icon: AlertTriangle,
-      color: "text-orange-600",
+      icon: AlertIcon,
+      color: "warning",
     },
     {
       title: "Active Users",
       value: analytics?.activeUsers || 0,
       change: "+8%",
-      icon: TrendingUp,
-      color: "text-purple-600",
+      icon: TrendingUpIcon,
+      color: "secondary",
     },
   ];
 
@@ -109,189 +114,190 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="h-full flex flex-col space-y-8">
-      <div className="space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight text-foreground">
+    <Box>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h3" fontWeight="bold" gutterBottom>
           Dashboard
-        </h2>
-        <p className="text-muted-foreground text-lg">
+        </Typography>
+        <Typography variant="h6" color="text.secondary">
           Welcome to your GradBook admin dashboard
-        </p>
-      </div>
+        </Typography>
+      </Box>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <Card
-            key={stat.title}
-            className="h-32 hover:shadow-md transition-shadow"
-          >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {stat.title}
-              </CardTitle>
-              <stat.icon className={`h-5 w-5 ${stat.color}`} />
-            </CardHeader>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {stats.map((stat) => {
+          const IconComponent = stat.icon;
+          return (
+            <Grid item xs={12} sm={6} md={3} key={stat.title}>
+              <Card sx={{ height: '100%', transition: 'all 0.2s', '&:hover': { transform: 'translateY(-2px)' } }}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                    <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                      {stat.title}
+                    </Typography>
+                    <IconComponent color={stat.color as any} />
+                  </Box>
+                  <Typography variant="h4" fontWeight="bold" gutterBottom>
+                    {stat.value.toLocaleString()}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    <Typography component="span" color="success.main" fontWeight={600}>
+                      {stat.change}
+                    </Typography>{" "}
+                    from last month
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          );
+        })}
+      </Grid>
+
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} md={8}>
+          <Card sx={{ height: 400 }}>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                {stat.value.toLocaleString()}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                <span className="text-green-600 font-medium">
-                  {stat.change}
-                </span>{" "}
-                from last month
-              </p>
+              <Typography variant="h6" fontWeight={600} gutterBottom>
+                User Growth
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Monthly user registration trends
+              </Typography>
+              <Box sx={{ height: 300 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={analytics?.userGrowth || []}>
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Line
+                      type="monotone"
+                      dataKey="users"
+                      stroke="#1976d2"
+                      strokeWidth={3}
+                      dot={{ fill: "#1976d2", strokeWidth: 2, r: 4 }}
+                      activeDot={{ r: 6, stroke: "#1976d2", strokeWidth: 2 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </Box>
             </CardContent>
           </Card>
-        ))}
-      </div>
+        </Grid>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7 flex-1 min-h-0">
-        <Card className="col-span-4 flex flex-col">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-foreground">User Growth</CardTitle>
-            <CardDescription>Monthly user registration trends</CardDescription>
-          </CardHeader>
-          <CardContent className="flex-1 min-h-0">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={analytics?.userGrowth || []}>
-                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                <XAxis
-                  dataKey="date"
-                  className="text-xs"
-                  tick={{ fill: "hsl(var(--muted-foreground))" }}
-                />
-                <YAxis
-                  className="text-xs"
-                  tick={{ fill: "hsl(var(--muted-foreground))" }}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--popover))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
-                    color: "hsl(var(--foreground))",
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="users"
-                  stroke="#3B82F6"
-                  strokeWidth={3}
-                  dot={{ fill: "#3B82F6", strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, stroke: "#3B82F6", strokeWidth: 2 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card className="col-span-3 flex flex-col">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-foreground">User Types</CardTitle>
-            <CardDescription>Distribution of user types</CardDescription>
-          </CardHeader>
-          <CardContent className="flex-1 min-h-0">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={userTypeData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) =>
-                    `${name} ${(percent * 100).toFixed(0)}%`
-                  }
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {userTypeData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--popover))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
-                    color: "hsl(var(--foreground))",
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2 min-h-96">
-        <Card className="flex flex-col">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-foreground">Post Activity</CardTitle>
-            <CardDescription>Daily post creation trends</CardDescription>
-          </CardHeader>
-          <CardContent className="flex-1 min-h-0">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={analytics?.postActivity || []}>
-                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                <XAxis
-                  dataKey="date"
-                  className="text-xs"
-                  tick={{ fill: "hsl(var(--muted-foreground))" }}
-                />
-                <YAxis
-                  className="text-xs"
-                  tick={{ fill: "hsl(var(--muted-foreground))" }}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--popover))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
-                    color: "hsl(var(--foreground))",
-                  }}
-                />
-                <Bar dataKey="posts" fill="#10B981" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card className="flex flex-col">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-foreground">Top Campuses</CardTitle>
-            <CardDescription>Campuses with most users</CardDescription>
-          </CardHeader>
-          <CardContent className="flex-1">
-            <div className="space-y-4">
-              {analytics?.topCampuses?.map((campus, index) => (
-                <div
-                  key={campus.name}
-                  className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                >
-                  <div className="flex items-center space-x-3">
-                    <Badge
-                      variant="secondary"
-                      className="w-8 h-8 rounded-full flex items-center justify-center"
+        <Grid item xs={12} md={4}>
+          <Card sx={{ height: 400 }}>
+            <CardContent>
+              <Typography variant="h6" fontWeight={600} gutterBottom>
+                User Types
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Distribution of user types
+              </Typography>
+              <Box sx={{ height: 300 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={userTypeData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) =>
+                        `${name} ${(percent * 100).toFixed(0)}%`
+                      }
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
                     >
-                      {index + 1}
-                    </Badge>
-                    <span className="font-medium text-foreground">
-                      {campus.name}
-                    </span>
-                  </div>
-                  <span className="text-sm text-muted-foreground font-medium">
-                    {campus.userCount} users
-                  </span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+                      {userTypeData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={6}>
+          <Card sx={{ height: 400 }}>
+            <CardContent>
+              <Typography variant="h6" fontWeight={600} gutterBottom>
+                Post Activity
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Daily post creation trends
+              </Typography>
+              <Box sx={{ height: 300 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={analytics?.postActivity || []}>
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="posts" fill="#4caf50" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Card sx={{ height: 400 }}>
+            <CardContent>
+              <Typography variant="h6" fontWeight={600} gutterBottom>
+                Top Campuses
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Campuses with most users
+              </Typography>
+              <Box sx={{ mt: 2 }}>
+                {analytics?.topCampuses?.map((campus, index) => (
+                  <Paper
+                    key={campus.name}
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      mb: 2,
+                      backgroundColor: 'action.hover',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Chip
+                        label={index + 1}
+                        size="small"
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: '50%',
+                          fontWeight: 600,
+                        }}
+                      />
+                      <Typography fontWeight={500}>
+                        {campus.name}
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                      {campus.userCount} users
+                    </Typography>
+                  </Paper>
+                ))}
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    </Box>
   );
 }
